@@ -1,5 +1,3 @@
-package SD;
-
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.net.MalformedURLException;
