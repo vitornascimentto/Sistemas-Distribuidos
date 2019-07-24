@@ -4,6 +4,12 @@ import time
 import pika
 import sys
 
+def atualizar():
+	with open('user2.txt', 'r') as arq:
+		text = arq.readlines()
+		for linha in text:
+			msg_list.insert(tkinter.END, linha[:len(linha)-1:])
+
 def receive():
    	connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
    	channel = connection.channel()
@@ -75,6 +81,8 @@ entry_field.bind("<Return>", sendMessage)
 entry_field.pack()
 send_button = tkinter.Button(top, text="Send", command=sendMessage)
 send_button.pack()
+
+atualizar()
 
 receive_thread = Thread(target=receive)
 receive_thread.start()
