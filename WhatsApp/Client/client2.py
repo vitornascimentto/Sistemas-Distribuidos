@@ -3,12 +3,34 @@ from threading import Thread
 import time
 import pika
 import sys
+from cryptography.fernet import Fernet
+
+def desencriptarMensagem(key, mensagem):
+	key = key.encode('utf-8')
+	mensagem = mensagem.encode('utf-8')
+	
+	f = Fernet(key)
+	return f.decrypt(mensagem).decode('utf-8')
+
+def encriptarMensagem(key, mensagem):
+	mensagem = mensagem.encode('utf-8')	
+	key = key.encode('utf-8')
+
+	f = Fernet(key)
+	token = f.encrypt(b'%s'%mensagem)
+	
+	return token.decode('utf-8')
 
 def atualizar():
+
+	with open('key.txt', 'r') as arq:
+		key = arq.read()
+
 	with open('user2.txt', 'r') as arq:
 		text = arq.readlines()
 		for linha in text:
-			msg_list.insert(tkinter.END, linha[:len(linha)-1:])
+			linha = desencriptarMensagem(key, linha)
+			msg_list.insert(tkinter.END, linha[:len(linha):])
 
 def receive():
    	connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -25,9 +47,17 @@ def receive():
    		msg = msg[2:len(msg)-1:]
 
    		msg_list.insert(tkinter.END, 'Somebody: ' + msg)
+
+   		msg = 'Somebody: ' + msg
+
+   		with open('key.txt', 'r') as arq:
+   			key = arq.read()
+
+   		msg = encriptarMensagem(key, msg)
+
    		with open('user2.txt', 'r') as data:
    			conteudo = data.readlines() 
-   			conteudo.append('Somebody: ' + msg + '\n')
+   			conteudo.append(msg + '\n')
    			with open('user2.txt', 'w') as data2:
    				data2.writelines(conteudo)
 
@@ -57,9 +87,17 @@ def sendMessage():
 	connection.close()	
 
 	msg_list.insert(tkinter.END, 'Me: ' + message)
+
+	msg = 'Me: ' + message
+
+	with open('key.txt', 'r') as arq:
+		key = arq.read()
+
+	message = encriptarMensagem(key, msg)
+
 	with open('user2.txt', 'r') as data:
 		conteudo = data.readlines() 
-		conteudo.append('Me: ' + message + '\n')
+		conteudo.append(message + '\n')
 		with open('user2.txt', 'w') as data2:
 			data2.writelines(conteudo)
 
@@ -68,6 +106,7 @@ top.title("Chatter2")
 
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()  # For the messages to be sent.
+my_msg.set("")
 scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
 
 msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
